@@ -3,6 +3,8 @@ package flowerdelivery;
 import flowerdelivery.config.kafka.KafkaProcessor;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.messaging.handler.annotation.Payload;
@@ -42,7 +44,12 @@ public class PolicyHandler{
             Payment payment= new Payment();
             payment.setOrderId(rejected.getId());
             payment.setPaymentStatus("rejected");
-            paymentRepository.save(payment);
+            paymentRepository.deleteById(rejected.getId());
+            
+//            ForciblyCanceled forciblyCanceled = new ForciblyCanceled();
+//            BeanUtils.copyProperties(payment, forciblyCanceled);
+//            forciblyCanceled.publishAfterCommit();
+            
         }
     }
 

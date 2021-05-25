@@ -29,6 +29,7 @@ public class PolicyHandler{
             Delivery delivery= new Delivery();
             delivery.setOrderId(decorated.getOrderId());
             delivery.setOrdermanagementStatus("decorated");
+            delivery.setDeliveryStatus("null");
             deliveryRepository.save(delivery);
             
         }
@@ -43,6 +44,7 @@ public class PolicyHandler{
             Delivery delivery= new Delivery();
             delivery.setOrderId(registrationCanceled.getOrdermanagementId());
             delivery.setOrdermanagementStatus("registrationCanceled");
+            delivery.setDeliveryStatus("null");
             deliveryRepository.save(delivery);
         }
     }    

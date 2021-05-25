@@ -10,7 +10,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface OrdermanagementRepository extends  PagingAndSortingRepository<Ordermanagement, Long>{
 
-//	Optional<Ordermanagement> findByOrderId(Long orderId);
+	Optional<Ordermanagement> findByOrderId(Long orderId);
 
 
 }

@@ -28,9 +28,10 @@ public class Payment {
 
     @PreRemove
     public void onPreRemove(){
-        PaymentCanceled paymentCanceled = new PaymentCanceled();
-        BeanUtils.copyProperties(this, paymentCanceled);
-        paymentCanceled.publishAfterCommit();
+    	System.out.println("Forcibly Canceling Order!!!"+this.getOrderId());
+//        PaymentCanceled paymentCanceled = new PaymentCanceled();
+//        BeanUtils.copyProperties(this, paymentCanceled);
+//        paymentCanceled.publishAfterCommit();
 
 
         ForciblyCanceled forciblyCanceled = new ForciblyCanceled();
