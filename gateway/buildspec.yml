@@ -47,7 +47,8 @@ phases:
           metadata:
             name: $_PROJECT_NAME
             namespace: FLOWERDELIVERY
-              valueFrom:
+              
+              valueFrom: 
                 configMapKeyRef:
                   name: flowerdelivery-config
                   key: FLOWERDELIVERY
