@@ -13,7 +13,7 @@ intensive lv2 course  group 3
   - [구현:](#구현)
     - [DDD 의 적용](#ddd-의-적용)    
     - [동기식 호출 과 Fallback 처리](#동기식-호출-과-Fallback-처리)
-    - [비동기식 호출 / 시간적 디커플링 / 장애격리 / 최종 (Eventual) 일관성 테스트](#비동기식-호출-과-Eventual-Consistency)
+    - [비동기식호출](#비동기식호출)
     - [폴리글랏 퍼시스턴스](#폴리글랏-퍼시스턴스)
     - [폴리글랏 프로그래밍](#폴리글랏-프로그래밍)
     - [API게이트웨이](#API게이트웨이)
@@ -625,7 +625,7 @@ Hibernate:
 
 
 
-## 비동기식 호출 / 시간적 디커플링 / 장애격리 / 최종 (Eventual) 일관성 테스트
+## 비동기식호출
 
 - 카프카를 이용하여 PubSub 으로 하나 이상의 서비스가 연동되었는가?
 
@@ -675,12 +675,133 @@ MSAez 모델링 도구를 활용하여 각 서비스의 이벤트와 폴리시�
 
 - Message Consumer 마이크로서비스가 장애상황에서 수신받지 못했던 기존 이벤트들을 다시 수신받아 처리하는가?
 
+주문서비스 - Req/Res - 결제서비스 -  Pub/Sub Paid이벤트 -  주문관리서비스  구조에서 
 
+주문관리 서비스를 중지하고 신규 주문 발생시 아래와 같이 정상처리 되며  카프카 큐에 저장되어 있다. 
+
+```
+C:\workspace\flowerdelivery>http POST http://localhost:8081/orders storeName=KJSHOP itemName="roses set" qty=1 itemPrice=50000 userName=LKJ
+HTTP/1.1 201
+Content-Type: application/json;charset=UTF-8
+Date: Tue, 25 May 2021 01:40:32 GMT
+Location: http://localhost:8081/orders/1
+Transfer-Encoding: chunked
+
+{
+    "_links": {
+        "order": {
+            "href": "http://localhost:8081/orders/1"
+        },
+        "self": {
+            "href": "http://localhost:8081/orders/1"
+        }
+    },
+    "itemName": "roses set",
+    "itemPrice": 50000,
+    "qty": 1,
+    "storeName": "KJSHOP",
+    "userName": "LKJ"
+}
+```
+
+카프카 
+
+![image](https://user-images.githubusercontent.com/80744199/119427582-3802cc80-bd46-11eb-844b-ef2b74a14066.png)
+
+
+이후 주문관리 서비스를 재구동 하면  카프카에 저장된 데이터를 확인하여 주문관리 데이터가 생성된다. 
+
+```
+kafka_receivedMessageKey=null, kafka_receivedPartitionId=0, contentType=application/json, kafka_receivedTopic=flowerdelivery, kafka_receivedTimestamp=1621906832138}]
+##### listener AcceptRequest : {"eventType":"Paid","timestamp":"20210525104032","id":1,"orderId":1,"storeName":"KJSHOP","itemName":"roses set","qty":1,"paymentStatus":"paid","me":true}
+paid 주문 발생
+주문 번호: 1
+Hibernate: 
+    call next value for hibernate_sequence
+Hibernate: 
+    insert
+    into
+        ordermanagement_table
+        (item_name, order_id, ordermanagement_status, payment_status, qty, store_name, user_name, id)
+    values
+        (?, ?, ?, ?, ?, ?, ?, ?)
+2021-05-25 10:41:10.750 TRACE 26256 --- [container-0-C-1] o.h.type.descriptor.sql.BasicBinder      : binding parameter [1] as [VARCHAR] - [null]
+2021-05-25 10:41:10.751 TRACE 26256 --- [container-0-C-1] o.h.type.descriptor.sql.BasicBinder      : binding parameter [2] as [BIGINT] - [1]
+2021-05-25 10:41:10.751 TRACE 26256 --- [container-0-C-1] o.h.type.descriptor.sql.BasicBinder      : binding parameter [3] as [VARCHAR] - [null]
+2021-05-25 10:41:10.751 TRACE 26256 --- [container-0-C-1] o.h.type.descriptor.sql.BasicBinder      : binding parameter [4] as [VARCHAR] - [paid]
+2021-05-25 10:41:10.752 TRACE 26256 --- [container-0-C-1] o.h.type.descriptor.sql.BasicBinder      : binding parameter [5] as [INTEGER] - [1]
+2021-05-25 10:41:10.752 TRACE 26256 --- [container-0-C-1] o.h.type.descriptor.sql.BasicBinder      : binding parameter [6] as [VARCHAR] - [KJSHOP]
+2021-05-25 10:41:10.753 TRACE 26256 --- [container-0-C-1] o.h.type.descriptor.sql.BasicBinder      : binding parameter [7] as [VARCHAR] - [null]
+2021-05-25 10:41:10.753 TRACE 26256 --- [container-0-C-1] o.h.type.descriptor.sql.BasicBinder      : binding parameter [8] as [BIGINT] - [1]
+2021-05-25 10:41:10.755 DEBUG 26256 --- [container-0-C-1] o.s.c.s.b.StreamListenerMessageHandler   : handler 'org.springframework.cloud.stream.binding.StreamListenerMessageHandler@6d3bd644' produced no reply 
+for request Message: GenericMessage [payload=byte[153], headers={kafka_offset=76, scst_nativeHeadersPresent=true, kafka_consumer=org.apache.kafka.clients.consumer.KafkaConsumer@169bad86, deliveryAttempt=1, kafka_timestampType=CREATE_TIME, kafka_receivedMessageKey=null, kafka_receivedPartitionId=0, contentType=application/json, kafka_receivedTopic=flowerdelivery, kafka_receivedTimestamp=1621906832138}]
+```
 
 
 - Scaling-out: Message Consumer 마이크로서비스의 Replica 를 추가했을때 중복없이 이벤트를 수신할 수 있는가
 
+주문관리 서비스를 1개에서 => 3개로 노드를 추가한다. 
+포트 중복을 방지하기 위해  8083, 8093, 8094 로 변경하여 구동하였으며 
 
+추가 노드 구동시에는 카프카 컨슈머 그룹에서 파티션이 재할당된다.  
+
+파티션 사이즈가 1이라서 
+기존 구동한 8083 노드는 파티션을 할당받으며 신규 추가된 노드는 파티션 할당을 받지 못한다. 
+
+파티션 할당받지못한 2번 3번 노드 
+```
+2021-05-25 10:54:45.411  INFO 37684 --- [container-0-C-1] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-3, groupId=ordermanagement] Revoking previously assigned partitions []
+2021-05-25 10:54:45.411  INFO 37684 --- [container-0-C-1] o.s.c.s.b.k.KafkaMessageChannelBinder$1  : partitions revoked: []
+2021-05-25 10:54:45.412  INFO 37684 --- [container-0-C-1] o.a.k.c.c.internals.AbstractCoordinator  : [Consumer clientId=consumer-3, groupId=ordermanagement] (Re-)joining group
+2021-05-25 10:54:45.416  INFO 37684 --- [container-0-C-1] o.a.k.c.c.internals.AbstractCoordinator  : [Consumer clientId=consumer-3, groupId=ordermanagement] Successfully joined group with generation 12       
+2021-05-25 10:54:45.416  INFO 37684 --- [container-0-C-1] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-3, groupId=ordermanagement] Setting newly assigned partitions []
+2021-05-25 10:54:45.417  INFO 37684 --- [container-0-C-1] o.s.c.s.b.k.KafkaMessageChannelBinder$1  : partitions assigned: []
+```
+
+3개가 구동된 상태에서 신규 주문을 추가한 경우 
+
+3개 중 1개 노드만 이벤트를 받아서 처리하고 나머지 2개 노드는 로그가 변화가 없다. 
+
+이벤트를 수신한 1번 노드 로그 
+```
+##### listener AcceptRequest : {"eventType":"Paid","timestamp":"20210525105421","id":14,"orderId":27,"storeName":"KJSHOP","itemName":"roses set","qty":1,"paymentStatus":"paid","me":true}
+paid 주문 발생
+주문 번호: 27
+Hibernate: 
+    call next value for hibernate_sequence
+Hibernate:
+    insert
+    into
+        ordermanagement_table
+        (item_name, order_id, ordermanagement_status, payment_status, qty, store_name, user_name, id)
+    values
+        (?, ?, ?, ?, ?, ?, ?, ?)
+2021-05-25 10:54:21.599 TRACE 26256 --- [container-0-C-1] o.h.type.descriptor.sql.BasicBinder      : binding parameter [1] as [VARCHAR] - [null]
+2021-05-25 10:54:21.599 TRACE 26256 --- [container-0-C-1] o.h.type.descriptor.sql.BasicBinder      : binding parameter [2] as [BIGINT] - [27]
+2021-05-25 10:54:21.599 TRACE 26256 --- [container-0-C-1] o.h.type.descriptor.sql.BasicBinder      : binding parameter [3] as [VARCHAR] - [null]
+2021-05-25 10:54:21.599 TRACE 26256 --- [container-0-C-1] o.h.type.descriptor.sql.BasicBinder      : binding parameter [4] as [VARCHAR] - [paid]
+2021-05-25 10:54:21.600 TRACE 26256 --- [container-0-C-1] o.h.type.descriptor.sql.BasicBinder      : binding parameter [5] as [INTEGER] - [1]
+2021-05-25 10:54:21.600 TRACE 26256 --- [container-0-C-1] o.h.type.descriptor.sql.BasicBinder      : binding parameter [6] as [VARCHAR] - [KJSHOP]
+2021-05-25 10:54:21.600 TRACE 26256 --- [container-0-C-1] o.h.type.descriptor.sql.BasicBinder      : binding parameter [7] as [VARCHAR] - [null]
+2021-05-25 10:54:21.600 TRACE 26256 --- [container-0-C-1] o.h.type.descriptor.sql.BasicBinder      : binding parameter [8] as [BIGINT] - [14]
+```
+
+변화 없는 2번 3번 노드 로그 
+```
+로그변화 없음 
+```
+
+1번 노드를 중지할 경우  2번 노드가 파티션을 할당받아서 이후의 이벤트를 수신 처리한다. 
+
+2번 노드가 파티션을 할당받은 로그
+```
+2021-05-25 10:54:45.411  INFO 28684 --- [container-0-C-1] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-3, groupId=ordermanagement] Revoking previously assigned partitions []
+2021-05-25 10:54:45.411  INFO 28684 --- [container-0-C-1] o.s.c.s.b.k.KafkaMessageChannelBinder$1  : partitions revoked: []
+2021-05-25 10:54:45.411  INFO 28684 --- [container-0-C-1] o.a.k.c.c.internals.AbstractCoordinator  : [Consumer clientId=consumer-3, groupId=ordermanagement] (Re-)joining group
+2021-05-25 10:54:45.416  INFO 28684 --- [container-0-C-1] o.a.k.c.c.internals.AbstractCoordinator  : [Consumer clientId=consumer-3, groupId=ordermanagement] Successfully joined group with generation 12       
+2021-05-25 10:54:45.417  INFO 28684 --- [container-0-C-1] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-3, groupId=ordermanagement] Setting newly assigned partitions [flowerdelivery-0]
+2021-05-25 10:54:45.421  INFO 28684 --- [container-0-C-1] o.s.c.s.b.k.KafkaMessageChannelBinder$1  : partitions assigned: [flowerdelivery-0]
+```
 
 
 
@@ -1292,6 +1413,50 @@ transfer-encoding: chunked
 
 ## SAGA패턴 
 
+SAGA 패턴은 각 서비스의 트랜잭션은 단일 서비스 내의 데이터를 갱신하는 일종의 로컬 트랜잭션 방법이고 서비스의 트랜잭션이 완료 후에 다음 서비스가 트리거 되어, 트랜잭션을 실행하는 방법입니다.
+
+현재 FlowerDelivery 시스템에도 SAGA 패턴에 맞추어서 작성되어 있다.
+
+**SAGA 패턴에 맞춘 트랜잭션 실행**
+
+![image](https://user-images.githubusercontent.com/44644430/119428043-253cc780-bd47-11eb-9ed4-06e5321a7f5c.png)
+
+현재 FlowerDelivery 시스템은 SAGA 패턴에 맞추어서 Order 서비스의 Order생성이 완료되면 Payment 서비스를 트리거하게 되어 paymentStatus를 paid 상태로 업데이트하여
+OrderManagement 서비스에서 주문을 수신하게 작성되어 있다.
+
+아래와 같이 실행한 결과이다.
+
+![image](https://user-images.githubusercontent.com/44644430/119429797-8fa33700-bd4a-11eb-94d9-0c79e9954471.png)
+
+위와 같이 Order 서비스에서 주문을 생성하게 될 경우 아래와 같이 Payment 서비스에서 payment를 paid 상태로 업데이트 하게 된다. 
+
+![image](https://user-images.githubusercontent.com/44644430/119429922-c8431080-bd4a-11eb-9f80-d48e11a7106f.png)
+
+위와 같이 Payment 서비스에서 paid 상태로 업데이트 하면서 이벤트를 발신하게 되고 이를 수신 받은 Ordermanagement 서비스에서 ordermanagement를 아래와 같이 수신 및 저장하게 된다.
+
+![image](https://user-images.githubusercontent.com/44644430/119430009-f1fc3780-bd4a-11eb-916b-de2f86ee2d49.png)
+
+![image](https://user-images.githubusercontent.com/44644430/119430043-04767100-bd4b-11eb-8db9-a3e31d4bd04a.png)
+
+
+**SAGA 패턴에 맞춘 SAGA Roll-Back 구성**
+
+![image](https://user-images.githubusercontent.com/44644430/119428313-97ada780-bd47-11eb-9ea6-cfeb764de2b6.png)
+
+위와 같이 현재 FlowerDelivery 시스템에서는 Choreograpy 방식으로 SAGA 패턴이 구현되도록 설계되어 있다.
+아래 예시는 OrdermMnagement 서비스에서 OrderReject가 발생했을때 이다.
+위 설계를 통해서 예상되는 결과물은 OrderManagement서비스에서도 삭제가 이루어지고 발행된 이벤트가 Payment 서비스에서 해당 order의 Payment도 삭제를 하면서
+보상 이벤트를 발행하는것이다.
+
+아래가 실행을 통한 결과이다.
+
+![image](https://user-images.githubusercontent.com/44644430/119435346-e6157300-bd54-11eb-91b1-9056cb0028f5.png)
+
+위와 같이  OrderReject로 OrderManagement 서비스에서 삭제가 이루어 질 경우 이벤트를 발생시켜 Payments 쪽에서도 삭제가 발생하게 된다.
+위 두번째 커맨드를 통해서 payment에서도 삭제가 된것을 확인 할 수 있다.
+아래 처럼 OrderManagement 서비스에서 OrderReject를 통해서 발생한 이벤트가 Payment 서비스의 ForciblyCanceled 이벤트를 발생시키는 것을 볼 수 있다.
+
+![image](https://user-images.githubusercontent.com/44644430/119435389-f9284300-bd54-11eb-902a-87c7abfee9e3.png)
 
 
 
@@ -1618,7 +1783,17 @@ Concurrency:		       96.02
 ```
 
 
-## 무정지 재배포
+## 무정지 운영 CI/CD
+
+- 플랫폼에서 제공하는 파피프라인을 적용하여 서비스를 클라우드에 배포하였는가?
+
+- Contract Test : 자동화된 경계 테스트를 통하여 구현 오류나 API 계약위반을 미리 차단 가능한가 ?
+
+- Advanced 
+	Canary Deploy : 
+	Shadow Deploy A/B Testing : 
+
+
 
 * 먼저 무정지 재배포가 100% 되는 것인지 확인하기 위해서 Autoscaler 이나 CB 설정을 제거함
 
