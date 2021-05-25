@@ -50,6 +50,12 @@ spring:
 
 spring:
   profiles: docker
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: http://oauth:8080/.well-known/jwks.json
+  
   cloud:
     gateway:
       routes:
