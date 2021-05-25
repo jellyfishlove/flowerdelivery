@@ -54,6 +54,13 @@ server:
 
 spring:
   profiles: docker
+  
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://kjworlddb01.caayby7upwt3.ap-northeast-2.rds.amazonaws.com:25432/postgres
+    username: postgres
+    password: rlwjd25
+    
   cloud:
     stream:
       kafka:
