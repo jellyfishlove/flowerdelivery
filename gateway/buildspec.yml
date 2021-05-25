@@ -39,6 +39,7 @@ phases:
       - kubectl config set-credentials admin --token="$KUBE_TOKEN"
       - kubectl config set-context default --cluster=k8s --user=admin
       - kubectl config use-context default
+      - kubectl get cm
       - |
           cat <<EOF | kubectl apply -f -
           apiVersion: v1
