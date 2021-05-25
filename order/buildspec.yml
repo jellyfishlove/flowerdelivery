@@ -97,6 +97,11 @@ phases:
                       periodSeconds: 5
                       failureThreshold: 5
           EOF
+      - echo deply step...
+      - kubectl create deploy order --image=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$_PROJECT_NAME:$CODEBUILD_RESOLVED_SOURCE_VERSION
+      - echo expose step... 
+      - kubectl expose deploy order --type=ClusterIP --port=8080
+      
 cache:
   paths:
     - '/root/.m2/**/*'
