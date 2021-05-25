@@ -740,7 +740,68 @@ for request Message: GenericMessage [payload=byte[153], headers={kafka_offset=76
 
 - Scaling-out: Message Consumer 마이크로서비스의 Replica 를 추가했을때 중복없이 이벤트를 수신할 수 있는가
 
+주문관리 서비스를 1개에서 => 3개로 노드를 추가한다. 
+포트 중복을 방지하기 위해  8083, 8093, 8094 로 변경하여 구동하였으며 
 
+추가 노드 구동시에는 카프카 컨슈머 그룹에서 파티션이 재할당된다.  
+
+파티션 사이즈가 1이라서 
+기존 구동한 8083 노드는 파티션을 할당받으며 신규 추가된 노드는 파티션 할당을 받지 못한다. 
+
+파티션 할당받지못한 2번 3번 노드 
+```
+2021-05-25 10:54:45.411  INFO 37684 --- [container-0-C-1] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-3, groupId=ordermanagement] Revoking previously assigned partitions []
+2021-05-25 10:54:45.411  INFO 37684 --- [container-0-C-1] o.s.c.s.b.k.KafkaMessageChannelBinder$1  : partitions revoked: []
+2021-05-25 10:54:45.412  INFO 37684 --- [container-0-C-1] o.a.k.c.c.internals.AbstractCoordinator  : [Consumer clientId=consumer-3, groupId=ordermanagement] (Re-)joining group
+2021-05-25 10:54:45.416  INFO 37684 --- [container-0-C-1] o.a.k.c.c.internals.AbstractCoordinator  : [Consumer clientId=consumer-3, groupId=ordermanagement] Successfully joined group with generation 12       
+2021-05-25 10:54:45.416  INFO 37684 --- [container-0-C-1] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-3, groupId=ordermanagement] Setting newly assigned partitions []
+2021-05-25 10:54:45.417  INFO 37684 --- [container-0-C-1] o.s.c.s.b.k.KafkaMessageChannelBinder$1  : partitions assigned: []
+```
+
+3개가 구동된 상태에서 신규 주문을 추가한 경우 
+
+3개 중 1개 노드만 이벤트를 받아서 처리하고 나머지 2개 노드는 로그가 변화가 없다. 
+
+이벤트를 수신한 1번 노드 로그 
+```
+##### listener AcceptRequest : {"eventType":"Paid","timestamp":"20210525105421","id":14,"orderId":27,"storeName":"KJSHOP","itemName":"roses set","qty":1,"paymentStatus":"paid","me":true}
+paid 주문 발생
+주문 번호: 27
+Hibernate: 
+    call next value for hibernate_sequence
+Hibernate:
+    insert
+    into
+        ordermanagement_table
+        (item_name, order_id, ordermanagement_status, payment_status, qty, store_name, user_name, id)
+    values
+        (?, ?, ?, ?, ?, ?, ?, ?)
+2021-05-25 10:54:21.599 TRACE 26256 --- [container-0-C-1] o.h.type.descriptor.sql.BasicBinder      : binding parameter [1] as [VARCHAR] - [null]
+2021-05-25 10:54:21.599 TRACE 26256 --- [container-0-C-1] o.h.type.descriptor.sql.BasicBinder      : binding parameter [2] as [BIGINT] - [27]
+2021-05-25 10:54:21.599 TRACE 26256 --- [container-0-C-1] o.h.type.descriptor.sql.BasicBinder      : binding parameter [3] as [VARCHAR] - [null]
+2021-05-25 10:54:21.599 TRACE 26256 --- [container-0-C-1] o.h.type.descriptor.sql.BasicBinder      : binding parameter [4] as [VARCHAR] - [paid]
+2021-05-25 10:54:21.600 TRACE 26256 --- [container-0-C-1] o.h.type.descriptor.sql.BasicBinder      : binding parameter [5] as [INTEGER] - [1]
+2021-05-25 10:54:21.600 TRACE 26256 --- [container-0-C-1] o.h.type.descriptor.sql.BasicBinder      : binding parameter [6] as [VARCHAR] - [KJSHOP]
+2021-05-25 10:54:21.600 TRACE 26256 --- [container-0-C-1] o.h.type.descriptor.sql.BasicBinder      : binding parameter [7] as [VARCHAR] - [null]
+2021-05-25 10:54:21.600 TRACE 26256 --- [container-0-C-1] o.h.type.descriptor.sql.BasicBinder      : binding parameter [8] as [BIGINT] - [14]
+```
+
+변화 없는 2번 3번 노드 로그 
+```
+로그변화 없음 
+```
+
+1번 노드를 중지할 경우  2번 노드가 파티션을 할당받아서 이후의 이벤트를 수신 처리한다. 
+
+2번 노드가 파티션을 할당받은 로그
+```
+2021-05-25 10:54:45.411  INFO 28684 --- [container-0-C-1] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-3, groupId=ordermanagement] Revoking previously assigned partitions []
+2021-05-25 10:54:45.411  INFO 28684 --- [container-0-C-1] o.s.c.s.b.k.KafkaMessageChannelBinder$1  : partitions revoked: []
+2021-05-25 10:54:45.411  INFO 28684 --- [container-0-C-1] o.a.k.c.c.internals.AbstractCoordinator  : [Consumer clientId=consumer-3, groupId=ordermanagement] (Re-)joining group
+2021-05-25 10:54:45.416  INFO 28684 --- [container-0-C-1] o.a.k.c.c.internals.AbstractCoordinator  : [Consumer clientId=consumer-3, groupId=ordermanagement] Successfully joined group with generation 12       
+2021-05-25 10:54:45.417  INFO 28684 --- [container-0-C-1] o.a.k.c.c.internals.ConsumerCoordinator  : [Consumer clientId=consumer-3, groupId=ordermanagement] Setting newly assigned partitions [flowerdelivery-0]
+2021-05-25 10:54:45.421  INFO 28684 --- [container-0-C-1] o.s.c.s.b.k.KafkaMessageChannelBinder$1  : partitions assigned: [flowerdelivery-0]
+```
 
 
 
