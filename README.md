@@ -1574,7 +1574,7 @@ phases:
                       - containerPort: 8080
                     readinessProbe:
                       httpGet:
-                        path: '/actuator/health'
+                        path: '/ordermanagements'
                         port: 8080
                       initialDelaySeconds: 10
                       timeoutSeconds: 2
@@ -1582,7 +1582,7 @@ phases:
                       failureThreshold: 10
                     livenessProbe:
                       httpGet:
-                        path: '/actuator/health'
+                        path: '/ordermanagements'
                         port: 8080
                       initialDelaySeconds: 120
                       timeoutSeconds: 2
