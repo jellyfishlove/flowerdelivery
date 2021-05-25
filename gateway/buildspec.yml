@@ -83,10 +83,10 @@ phases:
                     image: $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$_PROJECT_NAME:$CODEBUILD_RESOLVED_SOURCE_VERSION
                     ports:
                       - containerPort: PORTNUMBER
-                        valueFrom:
-                           configMapKeyRef:
-                             name: flowerdelivery-config
-                             key: portnumber
+                          valueFrom:
+                            configMapKeyRef:
+                              name: flowerdelivery-config
+                              key: portnumber
                     readinessProbe:
                       httpGet:
                         path: '/actuator/health'
