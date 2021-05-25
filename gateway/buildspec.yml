@@ -46,12 +46,7 @@ phases:
           kind: Service
           metadata:
             name: $_PROJECT_NAME
-            namespace: FLOWERDELIVERY
-              
-            valueFrom: 
-              configMapKeyRef:
-                name: flowerdelivery-config
-                key: FLOWERDELIVERY
+            namespace: flowerdelivery
             labels:
               app: $_PROJECT_NAME
           spec:
