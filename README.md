@@ -675,7 +675,67 @@ MSAez 모델링 도구를 활용하여 각 서비스의 이벤트와 폴리시�
 
 - Message Consumer 마이크로서비스가 장애상황에서 수신받지 못했던 기존 이벤트들을 다시 수신받아 처리하는가?
 
+주문서비스 - Req/Res - 결제서비스 -  Pub/Sub Paid이벤트 -  주문관리서비스  구조에서 
 
+주문관리 서비스를 중지하고 신규 주문 발생시 아래와 같이 정상처리 되며  카프카 큐에 저장되어 있다. 
+
+```
+C:\workspace\flowerdelivery>http POST http://localhost:8081/orders storeName=KJSHOP itemName="roses set" qty=1 itemPrice=50000 userName=LKJ
+HTTP/1.1 201
+Content-Type: application/json;charset=UTF-8
+Date: Tue, 25 May 2021 01:40:32 GMT
+Location: http://localhost:8081/orders/1
+Transfer-Encoding: chunked
+
+{
+    "_links": {
+        "order": {
+            "href": "http://localhost:8081/orders/1"
+        },
+        "self": {
+            "href": "http://localhost:8081/orders/1"
+        }
+    },
+    "itemName": "roses set",
+    "itemPrice": 50000,
+    "qty": 1,
+    "storeName": "KJSHOP",
+    "userName": "LKJ"
+}
+```
+
+카프카 
+
+![image](https://user-images.githubusercontent.com/80744199/119427582-3802cc80-bd46-11eb-844b-ef2b74a14066.png)
+
+
+이후 주문관리 서비스를 재구동 하면  카프카에 저장된 데이터를 확인하여 주문관리 데이터가 생성된다. 
+
+```
+kafka_receivedMessageKey=null, kafka_receivedPartitionId=0, contentType=application/json, kafka_receivedTopic=flowerdelivery, kafka_receivedTimestamp=1621906832138}]
+##### listener AcceptRequest : {"eventType":"Paid","timestamp":"20210525104032","id":1,"orderId":1,"storeName":"KJSHOP","itemName":"roses set","qty":1,"paymentStatus":"paid","me":true}
+paid 주문 발생
+주문 번호: 1
+Hibernate: 
+    call next value for hibernate_sequence
+Hibernate: 
+    insert
+    into
+        ordermanagement_table
+        (item_name, order_id, ordermanagement_status, payment_status, qty, store_name, user_name, id)
+    values
+        (?, ?, ?, ?, ?, ?, ?, ?)
+2021-05-25 10:41:10.750 TRACE 26256 --- [container-0-C-1] o.h.type.descriptor.sql.BasicBinder      : binding parameter [1] as [VARCHAR] - [null]
+2021-05-25 10:41:10.751 TRACE 26256 --- [container-0-C-1] o.h.type.descriptor.sql.BasicBinder      : binding parameter [2] as [BIGINT] - [1]
+2021-05-25 10:41:10.751 TRACE 26256 --- [container-0-C-1] o.h.type.descriptor.sql.BasicBinder      : binding parameter [3] as [VARCHAR] - [null]
+2021-05-25 10:41:10.751 TRACE 26256 --- [container-0-C-1] o.h.type.descriptor.sql.BasicBinder      : binding parameter [4] as [VARCHAR] - [paid]
+2021-05-25 10:41:10.752 TRACE 26256 --- [container-0-C-1] o.h.type.descriptor.sql.BasicBinder      : binding parameter [5] as [INTEGER] - [1]
+2021-05-25 10:41:10.752 TRACE 26256 --- [container-0-C-1] o.h.type.descriptor.sql.BasicBinder      : binding parameter [6] as [VARCHAR] - [KJSHOP]
+2021-05-25 10:41:10.753 TRACE 26256 --- [container-0-C-1] o.h.type.descriptor.sql.BasicBinder      : binding parameter [7] as [VARCHAR] - [null]
+2021-05-25 10:41:10.753 TRACE 26256 --- [container-0-C-1] o.h.type.descriptor.sql.BasicBinder      : binding parameter [8] as [BIGINT] - [1]
+2021-05-25 10:41:10.755 DEBUG 26256 --- [container-0-C-1] o.s.c.s.b.StreamListenerMessageHandler   : handler 'org.springframework.cloud.stream.binding.StreamListenerMessageHandler@6d3bd644' produced no reply 
+for request Message: GenericMessage [payload=byte[153], headers={kafka_offset=76, scst_nativeHeadersPresent=true, kafka_consumer=org.apache.kafka.clients.consumer.KafkaConsumer@169bad86, deliveryAttempt=1, kafka_timestampType=CREATE_TIME, kafka_receivedMessageKey=null, kafka_receivedPartitionId=0, contentType=application/json, kafka_receivedTopic=flowerdelivery, kafka_receivedTimestamp=1621906832138}]
+```
 
 
 - Scaling-out: Message Consumer 마이크로서비스의 Replica 를 추가했을때 중복없이 이벤트를 수신할 수 있는가
