@@ -1456,6 +1456,8 @@ OrderManagement 서비스에서 주문을 수신하게 작성되어 있다.
 위 두번째 커맨드를 통해서 payment에서도 삭제가 된것을 확인 할 수 있다.
 아래 처럼 OrderManagement 서비스에서 OrderReject를 통해서 발생한 이벤트가 Payment 서비스의 ForciblyCanceled 이벤트를 발생시키는 것을 볼 수 있다.
 
+![image](https://user-images.githubusercontent.com/44644430/119435389-f9284300-bd54-11eb-902a-87c7abfee9e3.png)
+
 
 
 # 운영
