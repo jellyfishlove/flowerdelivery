@@ -65,8 +65,8 @@ phases:
             namespace: NAMESPACE_FLOWER
               valueFrom:
                 configMapKeyRef:
-                 name: flowerdelivery-config
-                 key: namespace_flower
+                  name: flowerdelivery-config
+                  key: namespace_flower
             labels:
               app: $_PROJECT_NAME
           spec:
