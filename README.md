@@ -1360,9 +1360,12 @@ SAGA 패턴은 각 서비스의 트랜잭션은 단일 서비스 내의 데이�
 
 ![image](https://user-images.githubusercontent.com/44644430/119428043-253cc780-bd47-11eb-9ed4-06e5321a7f5c.png)
 
+현재 FlowerDelivery 시스템은 SAGA 패턴에 맞추어서 Order 서비스의 Order생성이 완료되면 Payment 서비스를 트리거하게 되어 paymentStatus를 paid 상태로 업데이트하여
+OrderManagement 서비스에서 주문을 수신하게 작성되어 있다.
+
 **SAGA 패턴에 맞춘 SAGA Roll-Back 구성**
 
-
+![image](https://user-images.githubusercontent.com/44644430/119428313-97ada780-bd47-11eb-9ea6-cfeb764de2b6.png)
 
 # 운영
 
