@@ -8,12 +8,12 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Date;
 
+
+
 @Entity
 @Table(name="Ordermanagement_table")
 public class Ordermanagement {
 
-	@Autowired
-	OrdermanagementRepository ordermanagementRepository;
 	
     @Id
     @GeneratedValue(strategy=GenerationType.AUTO)
@@ -30,32 +30,38 @@ public class Ordermanagement {
     public void onPostPersist(){
     	
 //    	Optional <Ordermanagement> ordermange=ordermanagementRepository.findByOrderId(this.orderId);
-//    	System.out.println("hihihihihi"+ordermange.get());
-//    	if(this.ordermanagementStatus.equals("decorated")) {
-//    		 Decorated decorated = new Decorated();
-//    		 decorated.setOrderId(this.orderId);
-//    	     BeanUtils.copyProperties(this, decorated);
-//    	     decorated.publishAfterCommit();
-//    	}
-//    	if(this.ordermanagementStatus.equals("received")) {
-//    		Received received = new Received();
-//    		received.setOrderId(this.orderId);
-//            BeanUtils.copyProperties(this, received);
-//            received.publishAfterCommit();
-//    	}
+    	
+    	if(this.ordermanagementStatus.equals("decorated")) {
+    		 Decorated decorated = new Decorated();
+    		 decorated.setOrderId(this.orderId);
+    	     BeanUtils.copyProperties(this, decorated);
+    	     decorated.publishAfterCommit();
+    	}
+    	if(this.ordermanagementStatus.equals("received")) {
+    		Received received = new Received();
+    		received.setOrderId(this.orderId);
+            BeanUtils.copyProperties(this, received);
+            received.publishAfterCommit();
+    	}
 
     }
+    
+//    @PostUpdate
+//    public void onPostUpdate() {
+//    	System.out.println("gogo"+this.orderId);
+//    }
 
     @PreRemove
     public void onPreRemove(){
+//    	System.out.println("status is " + this.getOrdermanagementStatus());
         Rejected rejected = new Rejected();
         BeanUtils.copyProperties(this, rejected);
         rejected.publishAfterCommit();
 
 
-        RegistrationCanceled registrationCanceled = new RegistrationCanceled();
-        BeanUtils.copyProperties(this, registrationCanceled);
-        registrationCanceled.publishAfterCommit();
+//        RegistrationCanceled registrationCanceled = new RegistrationCanceled();
+//        BeanUtils.copyProperties(this, registrationCanceled);
+//        registrationCanceled.publishAfterCommit();
 
 
     }
