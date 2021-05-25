@@ -1873,6 +1873,16 @@ Shortest transaction:           0.87
 
 
 - 결제서비스에 대한 replica 를 동적으로 늘려주도록 HPA 를 설정한다. 설정은 CPU 사용량이 15프로를 넘어서면 replica 를 10개까지 늘려준다:
+
+- 오토스케일 아웃 설정 및 확인
+
+1. kubectl autoscale deploy payment --min=1 --max=10 --cpu-percent=15
+
+2. siege -c255 -t120S -r10 -v --content-type "application/json" --header="Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzY29wZSI6WyJyZWFkIiwid3JpdGUiLCJ0cnVzdCJdLCJjb21wYW55IjoiVWVuZ2luZSIsImV4cCI6MTYyMjAxNDg0NSwiYXV0aG9yaXRpZXMiOlsiUk9MRV9UUlVTVEVEX0NMSUVOVCIsIlJPTEVfQ0xJRU5UIl0sImp0aSI6ImtOVDBzeExjV3ZMTzhMYU45RmQveG9uMmUzQT0iLCJjbGllbnRfaWQiOiJ1ZW5naW5lLWNsaWVudCJ9.Oye_jH01JyHIoXlZMJPCN0tOb1uphRrqXBAl9u3piwsOGoNfYeSBeRAgaRS25D417_02-suI_zUAhVA5CdTH5CcwWQhJVZ_L7Vw_bFpDeobdLT0NrPih5Du0tDaxeLIx2Rw6WUfUQNrMmvdjWp4PYYIa3AGExsChqrCdRRMEvwe5aTvr5YyD77VqedDUy2AF5Ak6wgdFpc_fnBJBRAX84-FZILMxsxxD-CZnSrLQMOYI2oH5JFaWwIX525DnbmCgLySelxehtkUEaxCKS55uwiS76KH20RIzMo5QfjhM-45LZ2tuooz3b9o-cjSjjjOLKpQito6PP75dhqP1PrxLTA" 'http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders POST {"storeName": "flowershop", "itemName": "rose", "qty": "1", "itemPrice": "20000", "userName": "LEE"}'
+
+3. kubectl get deploy payment -w 
+
+
 ```
 kubectl autoscale deploy pay --min=1 --max=10 --cpu-percent=15
 ```
@@ -1920,6 +1930,43 @@ Concurrency:		       96.02
 * 먼저 무정지 재배포가 100% 되는 것인지 확인하기 위해서 Autoscaler 이나 CB 설정을 제거함
 
 - seige 로 배포작업 직전에 워크로드를 모니터링 함.
+
+
+- 무정지 배포 설정 및 확인 순서
+ 
+1. siege -c100 -t120S -r10 -v --content-type "application/json" --header="Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzY29wZSI6WyJyZWFkIiwid3JpdGUiLCJ0cnVzdCJdLCJjb21wYW55IjoiVWVuZ2luZSIsImV4cCI6MTYyMTk5NDk0MSwiYXV0aG9yaXRpZXMiOlsiUk9MRV9UUlVTVEVEX0NMSUVOVCIsIlJPTEVfQ0xJRU5UIl0sImp0aSI6InFjWnRoQjB5NUJqWDhOWkNHOVFsNlRPTGpTUT0iLCJjbGllbnRfaWQiOiJ1ZW5naW5lLWNsaWVudCJ9.XeAYARc3SNMC6sJVzDCQJ1TwOqLC_aNRtdx8rjGZetHgxBkxdogAhPmL2L2QK7Mu7KlHu6HGxW2x9HmTm_5suPPFt5xVDbGbOZXxNqF9TkE5xINw9U7AfhysgigB1z07_GzQ6tkO_uA5V6LNGW76jAJcn2F8AT0R5aybRD-8CJ-RBz2vmzzTDYVflbCYUgnh9GPQasqcAmFuI-YA_0gijT4p7RKKHfI4-7HBYoY6z2b2cJ0elxSrcbCC2aRIaaZlLVnfrxgIoDOsS0fztFY1BoSDeN5F8k_jPrdi5fnr7d5wDr21rjQB6NQ5ubys5TIJNufgS_Uq6YPdI8umQpBHTA" 'http://ab9ce5b8019954239ae8acecb3584788-329956005.ap-northeast-2.elb.amazonaws.com:8080/orders POST {"storeName": "flowershop", "itemName": "rose", "qty": "1", "itemPrice": "20000", "userName": "LEE"}'
+
+2. kubectl set image deploy order order=052937454741.dkr.ecr.ap-northeast-2.amazonaws.com/user03-order:v5.4
+
+2.1 siege 로그 확인 
+
+3. cd /flowerdelivery/order/kubernetes
+
+4. kubectl apply -f deployment.yml
+
+5. kubectl apply -f service.yaml
+
+6. kubectl exec -it siege -- /bin/bash
+
+7. 배포 완료 후 kubectl get deploy order -o yaml 명령을 쳐서 image 와 readinessProbe 가 정상적으로 설정되어있는지 확인
+    spec:
+      containers:
+      - image: 052937454741.dkr.ecr.ap-northeast-2.amazonaws.com/order:latest
+        
+	imagePullPolicy: Always
+
+8. kubectl get pod 실행하여 STATUS가 정상적으로 Running 상태 확인
+
+9. siege 터미널을 열어서 충분한 시간만큼 부하를 준다. 
+ - kubectl exec -it siege -- /bin/bash
+ - siege -c100 -t120S -r10 -v --content-type "application/json" --header="Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzY29wZSI6WyJyZWFkIiwid3JpdGUiLCJ0cnVzdCJdLCJjb21wYW55IjoiVWVuZ2luZSIsImV4cCI6MTYyMTk5NDk0MSwiYXV0aG9yaXRpZXMiOlsiUk9MRV9UUlVTVEVEX0NMSUVOVCIsIlJPTEVfQ0xJRU5UIl0sImp0aSI6InFjWnRoQjB5NUJqWDhOWkNHOVFsNlRPTGpTUT0iLCJjbGllbnRfaWQiOiJ1ZW5naW5lLWNsaWVudCJ9.XeAYARc3SNMC6sJVzDCQJ1TwOqLC_aNRtdx8rjGZetHgxBkxdogAhPmL2L2QK7Mu7KlHu6HGxW2x9HmTm_5suPPFt5xVDbGbOZXxNqF9TkE5xINw9U7AfhysgigB1z07_GzQ6tkO_uA5V6LNGW76jAJcn2F8AT0R5aybRD-8CJ-RBz2vmzzTDYVflbCYUgnh9GPQasqcAmFuI-YA_0gijT4p7RKKHfI4-7HBYoY6z2b2cJ0elxSrcbCC2aRIaaZlLVnfrxgIoDOsS0fztFY1BoSDeN5F8k_jPrdi5fnr7d5wDr21rjQB6NQ5ubys5TIJNufgS_Uq6YPdI8umQpBHTA" 'http://ab9ce5b8019954239ae8acecb3584788-329956005.ap-northeast-2.elb.amazonaws.com:8080/orders POST {"storeName": "flowershop", "itemName": "rose", "qty": "1", "itemPrice": "20000", "userName": "LEE"}'
+
+10. 기존 터미널에서 kubectl set image 명령으로 신규 버전을 배포한다.
+
+11. kubectl set image deploy order order=052937454741.dkr.ecr.ap-northeast-2.amazonaws.com/user03-order:v5.4
+
+12. siege 로그를 보면서 배포시 무정지로 배포된 것을 확인한다.
+
 ```
 siege -c100 -t120S -r10 --content-type "application/json" 'http://localhost:8081/orders POST {"item": "chicken"}'
 
