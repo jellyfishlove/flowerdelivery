@@ -62,7 +62,11 @@ phases:
           kind: Deployment
           metadata:
             name: $_PROJECT_NAME
-            namespace: flowerdelivery
+            namespace: NAMESPACE_FLOWER
+            valueFrom:
+              configMapKeyRef:
+                name: flowerdelivery-config
+                key: namespace_flower
             labels:
               app: $_PROJECT_NAME
           spec:

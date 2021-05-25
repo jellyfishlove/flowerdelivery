@@ -1464,7 +1464,142 @@ OrderManagement 서비스에서 주문을 수신하게 작성되어 있다.
 
 ## CI/CD 설정
 
-각 구현체들은 각자의 source repository 에 구성되었고, 사용한 CI/CD 플랫폼은 GCP를 사용하였으며, pipeline build script 는 각 프로젝트 폴더 이하에 cloudbuild.yml 에 포함되었다.
+AWS Codebuild 를 활용하여 CI/CD 를 설정하였다. 
+
+CODEBUILD 
+
+소스 설정 
+
+![image](https://user-images.githubusercontent.com/80744199/119442382-b4a3a400-bd62-11eb-9040-debd81ce3f85.png)
+
+
+
+환경설정 ( 환경변수  계정, KUBE_URL, TOKEN 추가  ) 
+
+![image](https://user-images.githubusercontent.com/80744199/119442432-c9803780-bd62-11eb-80be-28d96b7b8919.png)
+
+
+
+빌드스펙
+
+Buildspec.yml는 flowerdelivery git의 각 하윅  order / payment / ordermanagement ....  프로젝트 내에 각기 들어가 있으며
+동일한 git 리포지토리를 활용하기 위에 아래와 같이  각 하위 프로젝트의 buildspec을 호출한다. 
+
+![image](https://user-images.githubusercontent.com/80744199/119442808-76f34b00-bd63-11eb-95c4-60cb448afe94.png)
+
+
+Buildspec.yml 내용 
+```
+version: 0.2
+
+env:
+  variables:
+    _PROJECT_NAME: "user03-ordermanagement"
+
+phases:
+  install:
+    runtime-versions:
+      java: openjdk8
+      docker: 18
+    commands:
+      - echo install kubectl
+      - curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
+      - chmod +x ./kubectl
+      - mv ./kubectl /usr/local/bin/kubectl
+  pre_build:
+    commands:
+      - echo Logging in to Amazon ECR...
+      - echo $_PROJECT_NAME
+      - echo $AWS_ACCOUNT_ID
+      - echo $AWS_DEFAULT_REGION
+      - echo $CODEBUILD_RESOLVED_SOURCE_VERSION
+      - echo start command
+      - $(aws ecr get-login --no-include-email --region $AWS_DEFAULT_REGION)
+      - cd ordermanagement
+      - echo $PWD
+  build:
+    commands:
+      - echo Build started on `date`
+      - echo Building the Docker image...
+      - mvn package -Dmaven.test.skip=true
+      - docker build -t $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$_PROJECT_NAME:$CODEBUILD_RESOLVED_SOURCE_VERSION  .
+  post_build:
+    commands:
+      - echo Pushing the Docker image...
+      - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$_PROJECT_NAME:$CODEBUILD_RESOLVED_SOURCE_VERSION
+      - echo connect kubectl
+      - kubectl config set-cluster k8s --server="$KUBE_URL" --insecure-skip-tls-verify=true
+      - kubectl config set-credentials admin --token="$KUBE_TOKEN"
+      - kubectl config set-context default --cluster=k8s --user=admin
+      - kubectl config use-context default
+      - |
+          cat <<EOF | kubectl apply -f -
+          apiVersion: v1
+          kind: Service
+          metadata:
+            name: $_PROJECT_NAME
+            namespace: flowerdelivery
+            labels:
+              app: $_PROJECT_NAME
+          spec:
+            ports:
+              - port: 8080
+                targetPort: 8080
+            selector:
+              app: $_PROJECT_NAME
+          EOF
+      - |
+          cat  <<EOF | kubectl apply -f -
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: $_PROJECT_NAME
+            namespace: flowerdelivery
+            labels:
+              app: $_PROJECT_NAME
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                app: $_PROJECT_NAME
+            template:
+              metadata:
+                labels:
+                  app: $_PROJECT_NAME
+              spec:
+                containers:
+                  - name: $_PROJECT_NAME
+                    image: $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$_PROJECT_NAME:$CODEBUILD_RESOLVED_SOURCE_VERSION
+                    ports:
+                      - containerPort: 8080
+                    readinessProbe:
+                      httpGet:
+                        path: '/actuator/health'
+                        port: 8080
+                      initialDelaySeconds: 10
+                      timeoutSeconds: 2
+                      periodSeconds: 5
+                      failureThreshold: 10
+                    livenessProbe:
+                      httpGet:
+                        path: '/actuator/health'
+                        port: 8080
+                      initialDelaySeconds: 120
+                      timeoutSeconds: 2
+                      periodSeconds: 5
+                      failureThreshold: 5
+          EOF
+cache:
+  paths:
+    - '/root/.m2/**/*'
+```
+
+
+빌드가 성공한 모습
+
+![image](https://user-images.githubusercontent.com/80744199/119442348-a2296a80-bd62-11eb-8b45-3d3ef9da96a2.png)
+
+
 
 ## 배포 
 
