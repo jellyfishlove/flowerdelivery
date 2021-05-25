@@ -23,6 +23,7 @@ intensive lv2 course  group 3
     - [동기식 호출 / 서킷 브레이킹 / 장애격리](#동기식-호출-서킷-브레이킹-장애격리)
     - [오토스케일 아웃](#오토스케일-아웃)
     - [무정지 재배포](#무정지-재배포)
+    - [Configmap](#ConfigMap)
   - [신규 개발 조직의 추가](#신규-개발-조직의-추가)
 
 # 서비스 시나리오
@@ -1989,3 +1990,11 @@ Concurrency:		       96.02
 
 배포기간 동안 Availability 가 변화없기 때문에 무정지 재배포가 성공한 것으로 확인됨.
 
+## ConfigMap
+
+- ConfigMaps는 컨테이너 이미지로부터 설정 정보를 분리할 수 있도록 Kubernetes에서 제공해주는 설정이다. 환경변수나 설정값 들을 환경변수로 관리해 Pod가 생성될 때 이 값을 주입할 수 있다.
+- Flowerdelivery 시스템에서는 namespace 값을 저장하여 사용하기 위해서 아래와 같이 flowerdelivery-config라는 이름의 config map 에 flowerdelivery라는 변수로 namespace의 값을 저장했다.
+
+![image](https://user-images.githubusercontent.com/44644430/119458742-0571c780-bd78-11eb-91e1-b1362b6b1066.png)
+
+![image](https://user-images.githubusercontent.com/44644430/119458850-22a69600-bd78-11eb-85e6-1589e471acee.png)
