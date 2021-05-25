@@ -1464,6 +1464,31 @@ OrderManagement 서비스에서 주문을 수신하게 작성되어 있다.
 
 ## CI/CD 설정
 
+AWS Codebuild 를 활용하여 CI/CD 를 설정하였다. 
+
+CODEBUILD 
+
+소스 설정 
+![image](https://user-images.githubusercontent.com/80744199/119442382-b4a3a400-bd62-11eb-9040-debd81ce3f85.png)
+
+환경설정 
+![image](https://user-images.githubusercontent.com/80744199/119442432-c9803780-bd62-11eb-80be-28d96b7b8919.png)
+
+환경변수  계정, KUBE_URL, TOKEN 추가 
+
+빌드스펙
+
+Buildspec.yml는 flowerdelivery git의 각 하윅  order / payment / ordermanagement ....  프로젝트 내에 각기 들어가 있으며
+동일한 git 리포지토리를 활용하기 위에 아래와 같이  각 하위 프로젝트의 buildspec을 호출한다. 
+
+![image](https://user-images.githubusercontent.com/80744199/119442808-76f34b00-bd63-11eb-95c4-60cb448afe94.png)
+
+
+
+
+![image](https://user-images.githubusercontent.com/80744199/119442348-a2296a80-bd62-11eb-8b45-3d3ef9da96a2.png)
+
+
 각 구현체들은 각자의 source repository 에 구성되었고, 사용한 CI/CD 플랫폼은 GCP를 사용하였으며, pipeline build script 는 각 프로젝트 폴더 이하에 cloudbuild.yml 에 포함되었다.
 
 ## 배포 
