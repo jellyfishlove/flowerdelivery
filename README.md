@@ -1783,7 +1783,17 @@ Concurrency:		       96.02
 ```
 
 
-## 무정지 재배포
+## 무정지 운영 CI/CD
+
+- 플랫폼에서 제공하는 파피프라인을 적용하여 서비스를 클라우드에 배포하였는가?
+
+- Contract Test : 자동화된 경계 테스트를 통하여 구현 오류나 API 계약위반을 미리 차단 가능한가 ?
+
+- Advanced 
+	Canary Deploy : 
+	Shadow Deploy A/B Testing : 
+
+
 
 * 먼저 무정지 재배포가 100% 되는 것인지 확인하기 위해서 Autoscaler 이나 CB 설정을 제거함
 
