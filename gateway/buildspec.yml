@@ -2,11 +2,7 @@ version: 0.2
 
 env:
   variables:
-    _PROJECT_NAME: PORTNUMBER
-      valueFrom:
-        configMapKeyRef:
-          name: flowerdelivery-config
-          key: portnumber
+    _PROJECT_NAME: "user03-gateway"
 phases:
   install:
     runtime-versions:
