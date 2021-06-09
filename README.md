@@ -210,7 +210,9 @@ cd delivery
 mvn spring-boot:run
 포트 : 8084 
 
-
+cd item
+mvn spring-boot:run
+포트 : 8085 
 ```
 
 ## DDD 의 적용
