@@ -1,7 +1,7 @@
 # flowerdelivery
-intensive lv2 course  group 3
+intensive lv2 course  group 3 이기정
 
-# 꽃 배달 서비스 ( 3조 리포트 )
+# 꽃 배달 서비스 ( 3조 리포트 - 이기정 개인 평가 )
 ![image](https://user-images.githubusercontent.com/80744199/117618717-52b33e00-b1a9-11eb-917b-6dafcedd86e8.png)
 
 # Table of contents
@@ -2028,6 +2028,37 @@ Concurrency:		       96.02
 - ConfigMaps는 컨테이너 이미지로부터 설정 정보를 분리할 수 있도록 Kubernetes에서 제공해주는 설정이다. 환경변수나 설정값 들을 환경변수로 관리해 Pod가 생성될 때 이 값을 주입할 수 있다.
 - Flowerdelivery 시스템에서는 namespace 값을 저장하여 사용하기 위해서 아래와 같이 flowerdelivery-config라는 이름의 config map 에 flowerdelivery라는 변수로 namespace의 값을 저장했다.
 
-![image](https://user-images.githubusercontent.com/44644430/119458742-0571c780-bd78-11eb-91e1-b1362b6b1066.png)
+flowerdelivery-config.yml
+![image](https://user-images.githubusercontent.com/80744199/121285031-acc63100-c918-11eb-81a3-84181ca9cd10.png)
 
-![image](https://user-images.githubusercontent.com/44644430/119458850-22a69600-bd78-11eb-85e6-1589e471acee.png)
+```
+C:\workspace\flowerdelivery>kubectl apply -f flowerdelivery-config.yml
+configmap/flowerdelivery-config created
+```
+
+buildspec.yml 에 아래와 같이 namespacename 이라는 환경 변수에  위 컨피그 맵에서 정의한  nsname의 값을 설정한다. 
+![image](https://user-images.githubusercontent.com/80744199/121285217-f44cbd00-c918-11eb-87be-a6c8554f01a1.png)
+
+빌드/배포 후에 
+![image](https://user-images.githubusercontent.com/80744199/121285340-31b14a80-c919-11eb-8478-e5e33ed1a84d.png)
+
+POD 로 진입하여 환경변수 및 Echo로  namespacename 값을 확인한다.
+
+pod진입
+```
+C:\workspace\flowerdelivery>kubectl exec -it -n flowerdelivery pod/order-58dd6cf76f-4wsrs /bin/bash
+kubectl exec [POD] [COMMAND] is DEPRECATED and will be removed in a future version. Use kubectl exec [POD] -- [COMMAND] instead.
+root@order-58dd6cf76f-4wsrs:/# 
+root@order-58dd6cf76f-4wsrs:/# 
+root@order-58dd6cf76f-4wsrs:/# env
+```
+
+env 확인
+![image](https://user-images.githubusercontent.com/80744199/121285490-71783200-c919-11eb-923b-a2267ccd00e6.png)
+
+echo 로 환경변수 확인
+```
+root@order-58dd6cf76f-4wsrs:/# echo $namespacename
+flowerdelivery
+```
+
