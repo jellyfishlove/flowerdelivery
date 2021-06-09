@@ -2024,6 +2024,37 @@ C:\workspace\flowerdelivery\payment>kubectl autoscale deployment.apps/payment --
 horizontalpodautoscaler.autoscaling/payment autoscaled
 ```
 
+```
+C:\workspace\flowerdelivery>kubectl autoscale deployment.apps/payment --cpu-percent=50 --min=1 --max=6
+horizontalpodautoscaler.autoscaling/payment autoscaled
+
+C:\workspace\flowerdelivery>kubectl get all
+NAME                           READY   STATUS    RESTARTS   AGE
+pod/gateway-6f67fb9bf9-t2zc5   1/1     Running   0          26m
+pod/order-96bb9df98-spgvl      1/1     Running   0          9m24s
+pod/payment-7c657f9b-vkvzr     1/1     Running   0          28m
+
+NAME                 TYPE           CLUSTER-IP       EXTERNAL-IP                                                                   PORT(S)          AGE
+service/gateway      LoadBalancer   10.100.17.208    a1f4f458259eb4e4abd9bd67ef8211db-641677351.ap-northeast-2.elb.amazonaws.com   8080:30760/TCP   26m
+service/kubernetes   ClusterIP      10.100.0.1       <none>                                                                        443/TCP          8h
+service/order        ClusterIP      10.100.108.3     <none>                                                                        8080/TCP         9m24s
+service/payment      ClusterIP      10.100.241.200   <none>                                                                        8080/TCP         28m
+
+NAME                      READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/gateway   1/1     1            1           26m
+deployment.apps/order     1/1     1            1           9m24s
+deployment.apps/payment   1/1     1            1           28m
+
+NAME                                 DESIRED   CURRENT   READY   AGE
+replicaset.apps/gateway-6f67fb9bf9   1         1         1       26m
+replicaset.apps/order-96bb9df98      1         1         1       9m24s
+replicaset.apps/payment-7c657f9b     1         1         1       28m
+
+NAME                                          REFERENCE            TARGETS         MINPODS   MAXPODS   REPLICAS   AGE
+horizontalpodautoscaler.autoscaling/payment   Deployment/payment   <unknown>/50%   1         6         0          5s
+
+
+```
 
 ```
 C:\workspace\flowerdelivery>kubectl get all
@@ -2082,6 +2113,19 @@ Transaction rate:	       17.15 trans/sec
 Throughput:		        0.01 MB/sec
 Concurrency:		       96.02
 ```
+
+![image](https://user-images.githubusercontent.com/80744199/121320618-4953f780-c948-11eb-87ea-7651c9385e5d.png)
+
+
+
+![image](https://user-images.githubusercontent.com/80744199/121320305-fed27b00-c947-11eb-82e1-9b2c06c7edac.png)
+
+
+![image](https://user-images.githubusercontent.com/80744199/121320401-17db2c00-c948-11eb-8b44-39891a3b14f5.png)
+
+
+![image](https://user-images.githubusercontent.com/80744199/121320485-2f1a1980-c948-11eb-9a43-b13335d4de64.png)
+
 
 
 ## 무정지 운영 CI/CD
