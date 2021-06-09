@@ -165,6 +165,14 @@ intensive lv2 course  group 3 이기정
 
 ![image](https://user-images.githubusercontent.com/80744199/119110084-bae10a00-ba5c-11eb-8fb4-ec4ef68e4421.png)
 
+
+
+상품관리를 위해 아이템 서비스 신규 추가 
+
+![image](https://user-images.githubusercontent.com/80744199/121293025-e6516900-c925-11eb-9ad3-3921ee9985e4.png)
+
+
+
 각 서비스별 구동커맨드는 아래와 같음
 ```
 cd gateway
