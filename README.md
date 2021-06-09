@@ -2130,6 +2130,66 @@ Concurrency:		       96.02
 
 ## 무정지 운영 CI/CD
 
+```
+apiVersion: v1
+kind: Service
+metadata:
+  name: item
+  labels:
+    app: item
+spec:
+  ports:
+    - port: 8080
+      targetPort: 8080
+  selector:
+    app: item
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: item
+  labels:
+    app: item
+spec:
+  selector:
+    matchLabels:
+      app: item
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: item
+    spec:
+      containers:
+      - name: item
+        image: 583098675101.dkr.ecr.ap-northeast-2.amazonaws.com/item:v1
+        ports:
+        - containerPort: 8080
+        readinessProbe:
+          httpGet:
+            path: '/items'
+            port: 8080
+          initialDelaySeconds: 10
+          timeoutSeconds: 2
+          periodSeconds: 5
+          failureThreshold: 10        
+---
+
+```
+
+```
+C:\workspace\flowerdelivery\item>kubectl apply -f kube-item-ready.yml
+service/item created
+deployment.apps/item created
+```
+![image](https://user-images.githubusercontent.com/80744199/121331140-9092b600-c951-11eb-8e95-220a467a265f.png)
+
+
+![image](https://user-images.githubusercontent.com/80744199/121331228-a43e1c80-c951-11eb-83b9-faab9c564c25.png)
+
+
+
+
 - 플랫폼에서 제공하는 파피프라인을 적용하여 서비스를 클라우드에 배포하였는가?
 
 - Contract Test : 자동화된 경계 테스트를 통하여 구현 오류나 API 계약위반을 미리 차단 가능한가 ?
