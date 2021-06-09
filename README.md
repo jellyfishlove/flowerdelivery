@@ -1966,151 +1966,34 @@ cache:
 
 ![image](https://user-images.githubusercontent.com/80744199/121292470-f7e64100-c924-11eb-9147-fccda792ff8e.png)
 
-## 배포 
-
-**AWS IAM User Access Key 생성**
-
-IAM > 액세스 관리 > 사용자 > 보안 자격 증명
-
-액세스 키 만들기 > Access Key, Private Key 별도 보관
-
-**AWS ECR 생성**
-
-
-ECR > 리포지토리 생성
-
-서비스 별 리포지토리 생성
-
-052937454741.dkr.ecr.ap-northeast-2.amazonaws.com/user03-delivery
-
-052937454741.dkr.ecr.ap-northeast-2.amazonaws.com/user03-gateway
-
-052937454741.dkr.ecr.ap-northeast-2.amazonaws.com/user03-order
-
-052937454741.dkr.ecr.ap-northeast-2.amazonaws.com/user03-ordermanagement
-
-052937454741.dkr.ecr.ap-northeast-2.amazonaws.com/user03-payment
-
-
-**클러스터 생성 EKS**
-
-eksctl create cluster --name user03-flowerdelivery --version 1.17 --nodegroup-name standard-workers --node-type t3.medium --nodes 4 --nodes-min 1 --nodes-max 4
-
-
-**클러스터 토큰 가져오기**
-
-aws eks --region ap-northeast-2 update-kubeconfig --name user03-flowerdelivery
-
-
-**ECR 로그인**
-
-docker login --username AWS -p $(aws ecr get-login-password --region ap-northeast-2) 052937454741.dkr.ecr.ap-northeast-2.amazonaws.com/
-
-**Maven 빌드**
-
-mvn package -Dmaven.test.skip=true
-
-**도커라이징**
-
-docker build -t 052937454741.dkr.ecr.ap-northeast-2.amazonaws.com/user03-delivery:latest .
-
-docker build -t 052937454741.dkr.ecr.ap-northeast-2.amazonaws.com/user03-gateway:latest .
-
-docker build -t 052937454741.dkr.ecr.ap-northeast-2.amazonaws.com/user03-order:latest .
-
-docker build -t 052937454741.dkr.ecr.ap-northeast-2.amazonaws.com/user03-order:latest .
-
-docker build -t 052937454741.dkr.ecr.ap-northeast-2.amazonaws.com/user03-payment:latest .
-
-docker build -t 052937454741.dkr.ecr.ap-northeast-2.amazonaws.com/user03-oauth:latest .
-
-**ECR 도커 이미지 푸시**
-
-docker push 052937454741.dkr.ecr.ap-northeast-2.amazonaws.com/user03-delivery:latest
-
-docker push 052937454741.dkr.ecr.ap-northeast-2.amazonaws.com/user03-gateway:latest
-
-docker push 052937454741.dkr.ecr.ap-northeast-2.amazonaws.com/user03-order:latest
-
-docker push 052937454741.dkr.ecr.ap-northeast-2.amazonaws.com/user03-ordermanagement:latest
-
-docker push 052937454741.dkr.ecr.ap-northeast-2.amazonaws.com/user03-payment:latest
-
-docker push 052937454741.dkr.ecr.ap-northeast-2.amazonaws.com/user03-oauth:latest
-
-
-**컨테이너라이징**
-
-<디플로이 생성>
-
-kubectl create deploy delivery --image=052937454741.dkr.ecr.ap-northeast-2.amazonaws.com/user03-delivery:latest
-
-kubectl expose deploy delivery --type=ClusterIP --port=8080
-
-kubectl create deploy gateway--image=052937454741.dkr.ecr.ap-northeast-2.amazonaws.com/user03-gateway:latest
-
-kubectl expose deploy gateway --type=LoadBalancer --port=8080
-
-kubectl create deploy order --image=052937454741.dkr.ecr.ap-northeast-2.amazonaws.com/user03-order:latest
-
-kubectl expose deploy order --type=ClusterIP --port=8080
-
-kubectl create deploy ordermanagement --image=052937454741.dkr.ecr.ap-northeast-2.amazonaws.com/user03-ordermanagement:latest
-
-kubectl expose deploy ordermanagement --type=ClusterIP --port=8080
-
-kubectl create deploy payment --image=052937454741.dkr.ecr.ap-northeast-2.amazonaws.com/user03-payment:latest
-
-kubectl expose deploy payment --type=ClusterIP" --port=8080
-
-kubectl create deploy oauth --image=052937454741.dkr.ecr.ap-northeast-2.amazonaws.com/user03-oauth :latest
-
-kubectl expose deploy oauth --type=ClusterIP --port=8080
-
-
-
 
 
 ## 동기식 호출 / 서킷 브레이킹 / 장애격리
 
 * 서킷 브레이킹 프레임워크의 선택: Spring FeignClient + Hystrix 옵션을 사용하여 구현함
 
-시나리오는 단말앱(app)-->결제(pay) 시의 연결을 RESTful Request/Response 로 연동하여 구현이 되어있고, 결제 요청이 과도할 경우 CB 를 통하여 장애격리.
+주문 - 결제간  신규 주문시 결제처리를 RestFul Req/Res 로 구현하였으며, 결제 요청이 과도할 경우 서킷 브레이크를 통해 장애 격리를 하려고 한다.
 
 - Hystrix 를 설정:  요청처리 쓰레드에서 처리시간이 610 밀리가 넘어서기 시작하여 어느정도 유지되면 CB 회로가 닫히도록 (요청을 빠르게 실패처리, 차단) 설정
-```
-# application.yml
 
-hystrix:
-  command:
-    # 전역설정
-    default:
-      execution.isolation.thread.timeoutInMilliseconds: 610
+![image](https://user-images.githubusercontent.com/80744199/121296950-785c7000-c92c-11eb-9e50-3b561bdcefd3.png)
 
-```
+- 결제 서비스의 부하 처리  - 400 밀리에서 증감 220 밀리 정도 왔다갔다 하게
 
-- 피호출 서비스(결제:pay) 의 임의 부하 처리 - 400 밀리에서 증감 220 밀리 정도 왔다갔다 하게
-```
-# (payment) Payment.java (Entity)
+![image](https://user-images.githubusercontent.com/80744199/121297163-da1cda00-c92c-11eb-9529-cc28dd361489.png)
 
-     @PostPersist
-    public void onPostPersist(){
-    		
-            try{
-                 Thread.currentThread().sleep((long) (400 + Math.random() * 220));
-            } catch (InterruptedException e){
-                e.printStackTrace();
-            }
 
-    		Paid paid = new Paid();
-    		BeanUtils.copyProperties(this, paid);
-    		paid.publishAfterCommit();
-    }
-```
 
 * 부하테스터 siege 툴을 통한 서킷 브레이커 동작 확인:
-- 동시사용자 255명
+- 동시사용자 100명
 - 60초 동안 실시
+
+```
+C:\workspace\flowerdelivery>kubectl exec -it --namespace istio-cb-ns siege bin/bash
+kubectl exec [POD] [COMMAND] is DEPRECATED and will be removed in a future version. Use kubectl exec [POD] -- [COMMAND] instead.
+root@siege:/# siege -c100 -t60S -r10 -v --content-type "application/json" 'http://a64bd0a2780534decae2fcf1f45cdc96-2126150052.ap-northeast-2.elb.amazonaws.com:8080/orders POST {"storeName": "flowershop", "itemName": "rose", "qty": "1", "itemPrice": "20000", "userName": "LEE", "itemId": "1"}'
+```
+
 
 ```
 $ siege -c255 -t60S -r10 -v --content-type "application/json" --header="Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzY29wZSI6WyJyZWFkIiwid3JpdGUiLCJ0cnVzdCJdLCJjb21wYW55IjoiVWVuZ2luZSIsImV4cCI6MTYyMjAxNDg0NSwiYXV0aG9yaXRpZXMiOlsiUk9MRV9UUlVTVEVEX0NMSUVOVCIsIlJPTEVfQ0xJRU5UIl0sImp0aSI6ImtOVDBzeExjV3ZMTzhMYU45RmQveG9uMmUzQT0iLCJjbGllbnRfaWQiOiJ1ZW5naW5lLWNsaWVudCJ9.Oye_jH01JyHIoXlZMJPCN0tOb1uphRrqXBAl9u3piwsOGoNfYeSBeRAgaRS25D417_02-suI_zUAhVA5CdTH5CcwWQhJVZ_L7Vw_bFpDeobdLT0NrPih5Du0tDaxeLIx2Rw6WUfUQNrMmvdjWp4PYYIa3AGExsChqrCdRRMEvwe5aTvr5YyD77VqedDUy2AF5Ak6wgdFpc_fnBJBRAX84-FZILMxsxxD-CZnSrLQMOYI2oH5JFaWwIX525DnbmCgLySelxehtkUEaxCKS55uwiS76KH20RIzMo5QfjhM-45LZ2tuooz3b9o-cjSjjjOLKpQito6PP75dhqP1PrxLTA" 'http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders POST {"storeName": "flowershop", "itemName": "rose", "qty": "1", "itemPrice": "20000", "userName": "LEE"}'
