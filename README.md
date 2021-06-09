@@ -4,6 +4,7 @@ intensive lv2 course  group 3 이기정
 # 꽃 배달 서비스 ( 3조 리포트 - 이기정 개인 평가 )
 ![image](https://user-images.githubusercontent.com/80744199/117618717-52b33e00-b1a9-11eb-917b-6dafcedd86e8.png)
 
+
 # Table of contents
 
 - [조별과제 - 꽃 배달 서비스](#---)
@@ -1601,6 +1602,9 @@ cache:
 ![image](https://user-images.githubusercontent.com/80744199/119442348-a2296a80-bd62-11eb-8b45-3d3ef9da96a2.png)
 
 
+개인 클라우드에 재구축함 
+
+![image](https://user-images.githubusercontent.com/80744199/121292470-f7e64100-c924-11eb-9147-fccda792ff8e.png)
 
 ## 배포 
 
