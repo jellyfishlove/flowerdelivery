@@ -1968,7 +1968,7 @@ cache:
 
 
 
-## 동기식 호출 / 서킷 브레이킹 / 장애격리
+## 동기식 호출 서킷 브레이킹 장애격리
 
 * 서킷 브레이킹 프레임워크의 선택: Spring FeignClient + Hystrix 옵션을 사용하여 구현함
 
@@ -1994,126 +1994,15 @@ kubectl exec [POD] [COMMAND] is DEPRECATED and will be removed in a future versi
 root@siege:/# siege -c100 -t60S -r10 -v --content-type "application/json" 'http://a64bd0a2780534decae2fcf1f45cdc96-2126150052.ap-northeast-2.elb.amazonaws.com:8080/orders POST {"storeName": "flowershop", "itemName": "rose", "qty": "1", "itemPrice": "20000", "userName": "LEE", "itemId": "1"}'
 ```
 
+요청 상태에 따라 회로 열기/닫기가 반복되는 모습 
 
-```
-$ siege -c255 -t60S -r10 -v --content-type "application/json" --header="Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzY29wZSI6WyJyZWFkIiwid3JpdGUiLCJ0cnVzdCJdLCJjb21wYW55IjoiVWVuZ2luZSIsImV4cCI6MTYyMjAxNDg0NSwiYXV0aG9yaXRpZXMiOlsiUk9MRV9UUlVTVEVEX0NMSUVOVCIsIlJPTEVfQ0xJRU5UIl0sImp0aSI6ImtOVDBzeExjV3ZMTzhMYU45RmQveG9uMmUzQT0iLCJjbGllbnRfaWQiOiJ1ZW5naW5lLWNsaWVudCJ9.Oye_jH01JyHIoXlZMJPCN0tOb1uphRrqXBAl9u3piwsOGoNfYeSBeRAgaRS25D417_02-suI_zUAhVA5CdTH5CcwWQhJVZ_L7Vw_bFpDeobdLT0NrPih5Du0tDaxeLIx2Rw6WUfUQNrMmvdjWp4PYYIa3AGExsChqrCdRRMEvwe5aTvr5YyD77VqedDUy2AF5Ak6wgdFpc_fnBJBRAX84-FZILMxsxxD-CZnSrLQMOYI2oH5JFaWwIX525DnbmCgLySelxehtkUEaxCKS55uwiS76KH20RIzMo5QfjhM-45LZ2tuooz3b9o-cjSjjjOLKpQito6PP75dhqP1PrxLTA" 'http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders POST {"storeName": "flowershop", "itemName": "rose", "qty": "1", "itemPrice": "20000", "userName": "LEE"}'
+![image](https://user-images.githubusercontent.com/80744199/121304446-4ef51180-c937-11eb-9f76-f7d33c772e85.png)
 
-** SIEGE 4.0.4
-** Preparing 255 concurrent users for battle.
-The server is now under siege...
-HTTP/1.1 201     0.87 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 201     0.89 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 201     0.91 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 201     0.95 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 201     1.01 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 201     1.02 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 201     1.04 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 201     1.03 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 201     1.05 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 201     1.06 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 201     1.80 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 201     1.82 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 201     1.77 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 201     1.91 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 201     1.87 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 201     1.99 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 201     2.00 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 201     1.91 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 201     2.01 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-:
-:
-* 요청이 과도하여 CB를 동작함 요청을 차단
-HTTP/1.1 500    30.07 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 500    30.09 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 500    30.12 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 500    30.15 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 500    30.20 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 201    23.59 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 500    30.15 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 500    30.17 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 500    30.17 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 500    30.22 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 500    30.17 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 500    30.11 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-:
-:
-* 요청을 어느정도 돌려보내고나니, 기존에 밀린 일들이 처리되었고, 회로를 닫아 요청을 다시 받기 시작
-HTTP/1.1 201    30.30 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 201    23.19 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 201    23.08 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 201    30.41 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 201    30.78 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 201    23.34 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 201    23.43 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 500    30.89 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 201    23.56 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 201    23.56 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 201    23.65 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 201    23.27 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 201    23.15 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 201    23.16 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 201    23.35 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 201    23.35 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 201    23.45 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-:
-:
-* 다시 요청이 쌓이기 시작하여 건당 처리시간이 610 밀리를 살짝 넘기기 시작 => 회로 열기 => 요청 실패처리
-HTTP/1.1 500    31.89 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 500    32.00 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 500    31.91 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 500    31.91 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 500    32.58 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 500    34.74 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 500    34.73 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 500    34.82 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 500    34.89 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 500    34.89 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 500    34.88 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 500    34.82 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 500    34.83 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-:
-:
-* 건당 (쓰레드당) 처리시간이 610 밀리 미만으로 회복) => 요청 수락
-HTTP/1.1 201    25.57 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 201    25.50 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 201    25.20 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 201    25.31 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 201    25.16 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 201    25.13 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 201    24.63 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 201    24.85 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 201    24.90 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 201    25.04 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 201    24.76 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 201    24.57 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 201    24.68 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 201    24.87 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 201    24.64 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 201    24.60 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
-HTTP/1.1 201    24.59 secs:     271 bytes ==> POST http://a95c41608c8d343318638531b3252fb7-1750438090.ap-northeast-2.elb.amazonaws.com:8080/orders
 
-:
-:
+![image](https://user-images.githubusercontent.com/80744199/121304595-85329100-c937-11eb-909d-1fbf1f4dcd72.png)
 
-Lifting the server siege...
-Transactions:                    430 hits
-Availability:                  89.96 %
-Elapsed time:                  59.35 secs
-Data transferred:               0.12 MB
-Response time:                 22.24 secs
-Transaction rate:               7.25 trans/sec
-Throughput:                     0.00 MB/sec
-Concurrency:                  161.13
-Successful transactions:         430
-Failed transactions:              48
-Longest transaction:           42.37
-Shortest transaction:           0.87
+고객 사용성이 좋지 않기 때문에  오토스케일 아웃 등의 설정을 통해 후속 처리가 필요함 
 
-```
-- 운영시스템은 죽지 않고 지속적으로 CB 에 의하여 적절히 회로가 열림과 닫힘이 벌어지면서 자원을 보호하고 있음을 보여줌. 하지만, 63.55% 가 성공하였고, 46%가 실패했다는 것은 고객 사용성에 있어 좋지 않기 때문에 Retry 설정과 동적 Scale out (replica의 자동적 추가,HPA) 을 통하여 시스템을 확장 해주는 후속처리가 필요.
-
-- Retry 의 설정 (istio)
-- Availability 가 높아진 것을 확인 (siege)
 
 ### 오토스케일 아웃
 앞서 CB 는 시스템을 안정되게 운영할 수 있게 해줬지만 사용자의 요청을 100% 받아들여주지 못했기 때문에 이에 대한 보완책으로 자동화된 확장 기능을 적용하고자 한다. 
@@ -2129,6 +2018,39 @@ Shortest transaction:           0.87
 
 3. kubectl get deploy payment -w 
 
+
+```
+C:\workspace\flowerdelivery\payment>kubectl autoscale deployment.apps/payment --cpu-percent=15 --min=1 --max=2
+horizontalpodautoscaler.autoscaling/payment autoscaled
+```
+
+
+```
+C:\workspace\flowerdelivery>kubectl get all
+NAME                           READY   STATUS    RESTARTS   AGE
+pod/gateway-6f67fb9bf9-t2zc5   1/1     Running   0          26m
+pod/order-96bb9df98-spgvl      1/1     Running   0          9m36s
+pod/payment-7c657f9b-vkvzr     1/1     Running   0          28m
+
+NAME                 TYPE           CLUSTER-IP       EXTERNAL-IP                                                                   PORT(S)          AGE
+service/gateway      LoadBalancer   10.100.17.208    a1f4f458259eb4e4abd9bd67ef8211db-641677351.ap-northeast-2.elb.amazonaws.com   8080:30760/TCP   26m
+service/kubernetes   ClusterIP      10.100.0.1       <none>                                                                        443/TCP          8h
+service/order        ClusterIP      10.100.108.3     <none>                                                                        8080/TCP         9m36s
+service/payment      ClusterIP      10.100.241.200   <none>                                                                        8080/TCP         28m
+
+NAME                      READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/gateway   1/1     1            1           26m
+deployment.apps/order     1/1     1            1           9m36s
+deployment.apps/payment   1/1     1            1           28m
+
+NAME                                 DESIRED   CURRENT   READY   AGE
+replicaset.apps/gateway-6f67fb9bf9   1         1         1       26m
+replicaset.apps/order-96bb9df98      1         1         1       9m36s
+replicaset.apps/payment-7c657f9b     1         1         1       28m
+
+NAME                                          REFERENCE            TARGETS   MINPODS   MAXPODS   REPLICAS   AGE
+horizontalpodautoscaler.autoscaling/payment   Deployment/payment   6%/50%    1         6         1          17s
+```
 
 ```
 kubectl autoscale deploy pay --min=1 --max=10 --cpu-percent=15
