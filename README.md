@@ -1148,6 +1148,14 @@ Transfer-Encoding: chunked
 ```
 
 
+신규 아이템 서비스가 추가되어  Menu CQRS를 추가함 
+
+![image](https://user-images.githubusercontent.com/80744199/121294062-b905ba80-c927-11eb-8037-655fd6d47b66.png)
+
+View Page 에 대한 설정 
+![image](https://user-images.githubusercontent.com/80744199/121294122-cde24e00-c927-11eb-8ab9-cc51e12bc3b5.png)
+
+
 
 
 ## 폴리글랏 퍼시스턴스
