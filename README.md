@@ -1494,6 +1494,333 @@ OrderManagement 서비스에서 주문을 수신하게 작성되어 있다.
 ![image](https://user-images.githubusercontent.com/44644430/119435389-f9284300-bd54-11eb-902a-87c7abfee9e3.png)
 
 
+SAGA 패턴 - 이기정 ver 
+
+신규 추가한 상품(아이템)서비스에는 재고 수량을 관리한다. 
+
+주문 -> 결제 -> 상품 재고 차감  Flow 이며  
+재고가 부족할 경우 
+주문 -> 결제 -> 상품 재고차감 !!!!재고 부족 시 재고차감되지 않음 -> 주문취소 이벤트 -> 결제취소 이벤트 -> 재고 차감분 복구 ( 재고차감이벤트로 발생한 경우는 복구 하지 않음 ) 
+
+위 Flow로 SAGA 패턴을 구현하였다. 
+
+장미세트 상품 5개 추가 
+```
+C:\workspace\flowerdelivery>http POST http://localhost:8085/items itemName="roses set n1"   storeName=KJSHOP stockCnt=5 itemPrice=50000
+HTTP/1.1 201
+Content-Type: application/json;charset=UTF-8
+Date: Wed, 09 Jun 2021 04:49:35 GMT
+Location: http://localhost:8085/items/1     
+Transfer-Encoding: chunked
+
+{
+    "_links": {
+        "item": {
+            "href": "http://localhost:8085/items/1"
+        },
+        "self": {
+            "href": "http://localhost:8085/items/1"
+        }
+    },
+    "itemName": "roses set n1",
+    "itemPrice": 50000,
+    "stockCnt": 5,
+    "storeName": "KJSHOP"
+}
+```
+
+LEEKIJUNG 이 3개 시켜서  재고 2개 남음 
+```
+C:\workspace\flowerdelivery>http POST http://localhost:8081/orders storeName=KJSHOP itemId=1 itemName="roses set n1" qty=3 itemPrice=50000 userName=LEEKIJUNG
+HTTP/1.1 201 
+Content-Type: application/json;charset=UTF-8
+Date: Wed, 09 Jun 2021 04:53:12 GMT
+Location: http://localhost:8081/orders/8
+Transfer-Encoding: chunked
+
+{
+    "_links": {
+        "order": {
+            "href": "http://localhost:8081/orders/8"
+        },
+        "self": {
+            "href": "http://localhost:8081/orders/8"
+        }
+    },
+    "itemId": 1,
+    "itemName": "roses set n1",
+    "itemPrice": 50000,
+    "orderStatus": null,
+    "qty": 3,
+    "storeName": "KJSHOP",
+    "userName": "LEEKIJUNG"
+}
+
+C:\workspace\flowerdelivery>http GET http://localhost:8085/items
+HTTP/1.1 200 
+Content-Type: application/hal+json;charset=UTF-8
+Date: Wed, 09 Jun 2021 04:53:21 GMT
+Transfer-Encoding: chunked
+
+{
+    "_embedded": {
+        "items": [
+            {
+                "_links": {
+                    "item": {
+                        "href": "http://localhost:8085/items/1"
+                    },
+                    "self": {
+                        "href": "http://localhost:8085/items/1"
+                    }
+                },
+                "itemName": "roses set n1",
+                "itemPrice": 50000,
+                "stockCnt": 2,
+                "storeName": "KJSHOP"
+            }
+        ]
+    },
+    "_links": {
+        "profile": {
+            "href": "http://localhost:8085/profile/items"
+        },
+        "self": {
+            "href": "http://localhost:8085/items{?page,size,sort}",
+            "templated": true
+        }
+    },
+    "page": {
+        "number": 0,
+        "size": 20,
+        "totalElements": 1,
+        "totalPages": 1
+    }
+}
+```
+
+HONG 이 3개 추가 주문함 
+```
+C:\workspace\flowerdelivery>http POST http://localhost:8081/orders storeName=KJSHOP itemId=1 itemName="roses set n1" qty=3 itemPrice=50000 userName=HONG
+HTTP/1.1 201 
+Content-Type: application/json;charset=UTF-8
+Date: Wed, 09 Jun 2021 04:53:49 GMT
+Location: http://localhost:8081/orders/10
+Transfer-Encoding: chunked
+
+{
+    "_links": {
+        "order": {
+            "href": "http://localhost:8081/orders/10"
+        },
+        "self": {
+            "href": "http://localhost:8081/orders/10"
+        }
+    },
+    "itemId": 1,
+    "itemName": "roses set n1",
+    "itemPrice": 50000,
+    "orderStatus": null,
+    "qty": 3,
+    "storeName": "KJSHOP",
+    "userName": "HONG"
+}
+```
+
+상품 재고는 그대로 2개 이며 
+```
+C:\workspace\flowerdelivery>http GET http://localhost:8085/items
+HTTP/1.1 200 
+Content-Type: application/hal+json;charset=UTF-8
+Date: Wed, 09 Jun 2021 04:54:13 GMT
+Transfer-Encoding: chunked
+
+{
+    "_embedded": {
+        "items": [
+            {
+                "_links": {
+                    "item": {
+                        "href": "http://localhost:8085/items/1"
+                    },
+                    "self": {
+                        "href": "http://localhost:8085/items/1"
+                    }
+                },
+                "itemName": "roses set n1",
+                "itemPrice": 50000,
+                "stockCnt": 2,
+                "storeName": "KJSHOP"
+            }
+        ]
+    },
+    "_links": {
+        "profile": {
+            "href": "http://localhost:8085/profile/items"
+        },
+        "self": {
+            "href": "http://localhost:8085/items{?page,size,sort}",
+            "templated": true
+        }
+    },
+    "page": {
+        "number": 0,
+        "size": 20,
+        "totalElements": 1,
+        "totalPages": 1
+    }
+}
+```
+
+2번쨰 주문는  주문취소상태
+2번째 결제는 결제취소상태로 각각 변경됨 
+
+```
+C:\workspace\flowerdelivery>http GET http://localhost:8081/orders
+HTTP/1.1 200 
+Content-Type: application/hal+json;charset=UTF-8
+Date: Wed, 09 Jun 2021 04:54:35 GMT
+Transfer-Encoding: chunked
+
+{
+    "_embedded": {
+        "orders": [
+            {
+                "_links": {
+                    "order": {
+                        "href": "http://localhost:8081/orders/8"
+                    },
+                    "self": {
+                        "href": "http://localhost:8081/orders/8"
+                    }
+                },
+                "itemId": 1,
+                "itemName": "roses set n1",
+                "itemPrice": 50000,
+                "orderStatus": null,
+                "qty": 3,
+                "storeName": "KJSHOP",
+                "userName": "LEEKIJUNG"
+            },
+            {
+                "_links": {
+                    "order": {
+                        "href": "http://localhost:8081/orders/10"
+                    },
+                    "self": {
+                        "href": "http://localhost:8081/orders/10"
+                    }
+                },
+                "itemId": 1,
+                "itemName": "roses set n1",
+                "itemPrice": 50000,
+                "orderStatus": "OrderCancelled",
+                "qty": 3,
+                "storeName": "KJSHOP",
+                "userName": "HONG"
+            }
+        ]
+    },
+    "_links": {
+        "profile": {
+            "href": "http://localhost:8081/profile/orders"
+        },
+        "self": {
+            "href": "http://localhost:8081/orders{?page,size,sort}",
+            "templated": true
+        }
+    },
+    "page": {
+        "number": 0,
+        "size": 20,
+        "totalElements": 2,
+        "totalPages": 1
+    }
+}
+
+C:\workspace\flowerdelivery>http GET http://localhost:8082/payments
+HTTP/1.1 200 
+Content-Type: application/hal+json;charset=UTF-8
+Date: Wed, 09 Jun 2021 04:54:21 GMT
+Transfer-Encoding: chunked
+
+{
+    "_embedded": {
+        "payments": [
+            {
+                "_links": {
+                    "payment": {
+                        "href": "http://localhost:8082/payments/1"
+                    },
+                    "self": {
+                        "href": "http://localhost:8082/payments/1"
+                    }
+                },
+                "itemId": 1,
+                "itemName": "roses set n1",
+                "itemPrice": 50000,
+                "orderId": 8,
+                "paymentStatus": "paid",
+                "qty": 3,
+                "storeName": "KJSHOP",
+                "userName": null
+            },
+            {
+                "_links": {
+                    "payment": {
+                        "href": "http://localhost:8082/payments/2"
+                    },
+                    "self": {
+                        "href": "http://localhost:8082/payments/2"
+                    }
+                },
+                "itemId": 1,
+                "itemName": "roses set n1",
+                "itemPrice": 50000,
+                "orderId": 10,
+                "paymentStatus": "paid",
+                "qty": 3,
+                "storeName": "KJSHOP",
+                "userName": null
+            },
+            {
+                "_links": {
+                    "payment": {
+                        "href": "http://localhost:8082/payments/3"
+                    },
+                    "self": {
+                        "href": "http://localhost:8082/payments/3"
+                    }
+                },
+                "itemId": null,
+                "itemName": null,
+                "itemPrice": null,
+                "orderId": 10,
+                "paymentStatus": "paymentCanceled",
+                "qty": null,
+                "storeName": null,
+                "userName": null
+            }
+        ]
+    },
+    "_links": {
+        "profile": {
+            "href": "http://localhost:8082/profile/payments"
+        },
+        "self": {
+            "href": "http://localhost:8082/payments{?page,size,sort}",
+            "templated": true
+        }
+    },
+    "page": {
+        "number": 0,
+        "size": 20,
+        "totalElements": 3,
+        "totalPages": 1
+    }
+}
+```
+
 
 # 운영
 
